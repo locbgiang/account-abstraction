@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+// IAccount is the core interface that defines the contract requirement for an account abstraction
+// Any contract that wants to act as an account abstraction wallet must implement this interface
 import {IAccount} from "@account-abstraction/contracts/interfaces/IAccount.sol";
+
+// PackedUserOperation is a data structure that represents a user operation in the ERC-4337 account abstraction
 import {PackedUserOperation} from "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
