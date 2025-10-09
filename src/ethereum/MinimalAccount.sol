@@ -6,6 +6,8 @@ pragma solidity ^0.8.24;
 import {IAccount} from "@account-abstraction/contracts/interfaces/IAccount.sol";
 
 // PackedUserOperation is a data structure that represents a user operation in the ERC-4337 account abstraction
+// Like a package delivery request in a logistics system
+// the sender address, recipient address, package content, tracking number, signature, fee
 import {PackedUserOperation} from "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -27,7 +29,7 @@ contract MinimalAccount is IAccount, Ownable {
 
     function _payPrefund(uint256 missingAccountFunds) internal {
         if (missingAccountFunds != 0) {
-            (bool success, ) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max("")};
+            (bool success, ) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max}("");
             (success); 
         }
     }
