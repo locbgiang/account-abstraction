@@ -53,6 +53,45 @@ contract HelperConfig is Script {
     }
 
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
-        
+        if (chainId == LOCAL_CHAIN_ID) {
+            return getOrCreateAnvilEthConfig();
+        } else if (networkConfigs[chainId].account != address(0)) {
+            return networkConfigs[chainId];
+        } else {
+            revert HelperConfig__InvalidChainId();
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Configs //////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+
+    function getEthMainnetConfig() public pure returns (NetworkConfig memory) {
+        // this is v7
+        return NetworkConfig({
+            entryPoint: 
+        })
+    }
+
+    function getOrCreateAnvilEthConfig() public returns(NetworkConfig memory) {
+        if (localNetworkConfig.account != address(0)) {
+            return localNetworkConfig;
+        }
+
+        // deploy mocks
+        console2.log("Deploying mocks...");
+        vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
+        EntryPoint entryPoint = new EntryPoint();
+        ERC20Mock erc20Mock = new ERC20Mock();
+        vm.stopBroadcast();
+        console2.log("Mocks deployed!");
+
+        localNetworkConfig = NetworkConfig({
+            entryPoint: address(entryPoint),
+            usdc: address(erc20Mock),
+            account: ANVIL_DEFAULT_ACCOUNT
+        });
+
+        return localNetworkConfig;
     }
 }

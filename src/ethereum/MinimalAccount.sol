@@ -16,8 +16,33 @@ import {PackedUserOperation} from "@account-abstraction/contracts/interfaces/Pac
 // Access control: Provides the onlyOwner modifier to restrict function access
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+// EntryPoint is a singleton contract that acts as the central coordinator for all ERC-4337 
+// Think of it as the 'traffic controller' for all smart contract wallets
+// Key Responsibilities of EntryPoint:
+// Operation Validation, gas management, execution, bundling, security
+import {IEntryPoint} from '@account-abstraction/contracts/interfaces/IEntryPoint.sol';
+
+
+/**
+ * @title MinimalAccount
+ * @author Loc
+ * @notice The flow:
+ * 1. User submits a PackedUserOperation to a bundle
+ * 2. Bundler calls EntryPoint.handleOps() with the operation
+ * 3. EntryPoint calls this.validateUserOp() to verify the operation
+ * 4. This contract validates signature and pay gas fee
+ * 5. EntryPoint executes the actual transaction if validation passes
+ */
 contract MinimalAccount is IAccount, Ownable {
-    constructor(address entrypoint) Ownable(msg.sender) {
+
+    ///////////////////////////////////////////////////////////////
+    // State Variables ////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
+
+    IEntryPoint private immutable i_entryPoint;
+
+    constructor(address entryPoint) Ownable(msg.sender) {
+        i_entryPoint = IEntryPoint(entryPoint);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -41,7 +66,7 @@ contract MinimalAccount is IAccount, Ownable {
     }
 
     /**
-     * This is a core part of the ERC-4337 account abstraction standard
+     * This is a core part of the ERC-4337 account abstraction standard.
      * Called by EntryPoint contract to validate a user operation before executing it.
      * It acts as a security checkpoint to ensure the operation is legitimate and properly funded.
      * @param userOp the packed user operation containing all the transaction details
@@ -61,6 +86,9 @@ contract MinimalAccount is IAccount, Ownable {
         // Returns the validation data that indicates whether the signature is valid
         validationData = _validateSignature(userOp, userOpHash);
         // _validateNonce()
+
+        // pay any missing funds to the EntryPoint to cover gas costs
+        // if the account doesn't have enough ETH for gas, this transfer the required amount
         _payPrefund(missingAccountFunds);
     }
 }
