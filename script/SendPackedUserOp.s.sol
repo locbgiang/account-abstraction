@@ -9,37 +9,57 @@ contract SendPackedUserOp is Script {
 
     /**
      * designed to create and send a 'packed user operation' on the Ethereum blockchain.
+     * a key component of EIP-4337 (account abstraction).
+     * 
+     * Think of it like creating a "smart transaction" that can be executed by a
+     * smart contract wallet instead of a regular EOA (externally owned account).
      */
     function run () public {
         // setup
-        // A HelperConfig instance is created to retrieve configuration details
+        // get network-specific addresses (like USDC contract address on Arbitrum)
+        // USDC for example has different addresses on different chains
         HelperConfig helperConfig = new HelperConfig();
         address dest = helperConfig.getConfig().usdc; // arbitrum mainnnet USDC address
         
-        // the value is set to 0, meaning no native Ether will be sent with the operation
+        // Specifies how much ETH to send.
+        // Set to 0 because we're calling USDC's approve() function,
+        // which doesn't require ETH payment.
+        // why are we using USDC specifically?
         uint256 value = 0;
 
-        // the address of the most recent deployment of the MinimalAccount contract
-        // retrieved using DevOpsTools
+        // gets smart contract wallet address
+        // Example: MetaMask has address 0x123 but smart contract wallet might be 0x456
+        // this finds the latest deployed version
         address minimalAccountAddress = DevOpsTools.get_most_recent_deployment(
             "MinimalAccount",
             block.chainid
         );
 
-        // the approve function of the IERC20 interface is encoded with the following parameters
-        // RANDOM_APPROVER: The address
+        // encodes the actual function call you want to make
+        // example: to approve Uniswap to send 1000 USDC from your wallet,
+        // you need to call approve([Uniswap token contract address], 1000e6)
         bytes memory functionData = abi.encodeWithSelector(IERC20.approve.selector, RANDOM_APPROVER, 1e18);
+        
+        // wraps your function call in the smart wallet's execute() function.
+        // your smart wallet needs to know 
+        //'execute this approve call on the USDC contract with 0 ETH value'
         bytes memory executionCallData = abi.encodeWithSelector(
             MinimalAccount.execute.selector,
             dest,
             value,
             functionData
         );
+
+        // creates the complete user operation with all the required field
+        // (gas limit, fees, signature)
+        // like filling out a complete transaction form with gas price, nonce, and signature
         PackedUserOperation memory userOp = generateSignedUserOperation(
             executeCallData,
             helperConfig.getConfig(),
             minimalAccountAddress()
         );
+
+        
         PackedUserOperation[] memory ops = new PackedUserOperation[](1);
         ops[0] = userOp;
 
