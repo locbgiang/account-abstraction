@@ -17,5 +17,23 @@ contract SendPackedUserOp is Script {
         );
 
         bytes memory functionData = abi.encodeWithSelector(IERC20.approve.selector, RANDOM_APPROVER, 1e18);
+        bytes memory executionCallData = abi.encodeWithSelector(
+            MinimalAccount.execute.selector,
+            dest,
+            value,
+            functionData
+        );
+        PackedUserOperation memory userOp = generateSignedUserOperation(
+            executeCallData,
+            helperConfig.getConfig(),
+            minimalAccountAddress()
+        );
+        PackedUserOperation[] memory ops = new PackedUserOperation[](1);
+        ops[0] = userOp;
+
+        // send transaction
+        vm.startBroadcast();
+        IEntryPoint(helperConfig.getConfig().entryPoint).handleOps(ops, payable(helperConfig.getConfig().account));
+        vm.stopBroadcast();
     }
 }
