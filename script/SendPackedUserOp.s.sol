@@ -59,16 +59,27 @@ contract SendPackedUserOp is Script {
             minimalAccountAddress()
         );
 
-        
+        // The PackeduserOperation is added to an array (ops) with a single element
         PackedUserOperation[] memory ops = new PackedUserOperation[](1);
         ops[0] = userOp;
 
-        // send transaction
+\        // handleOps: the handleOps function of the IEntryPoint contract is called with:
+        // ops: the array of packed user operations
+        // payable(HelperConfig.getConfig().account): the account that will pay for the operation
         vm.startBroadcast();
         IEntryPoint(helperConfig.getConfig().entryPoint).handleOps(ops, payable(helperConfig.getConfig().account));
         vm.stopBroadcast();
     }
 
+    /**
+     * This function generates a signed user operation that can be sent to an IEntryPoint
+     * contract for execution.
+     * This is part of the Account Abstraction mechanism, where smart contract wallets
+     * can execute transactions.
+     * @param callData The data for the function call that the user operation will execute
+     * @param config A configurtion object containing network-specific details
+     * @param minimalAccount The address of the smart contract wallet that will execute the operation
+     */
     function generateSignedUserOperation(
         bytes memory callData,
         HelperConfig.NetworkConfig memory config,
