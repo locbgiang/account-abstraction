@@ -86,11 +86,25 @@ contract SendPackedUserOp is Script {
         address minimalAccount
     ) public view returns (PackedUserOperation memory) {
         // 1. Generate the unsigned data
+        // retrieves the nonce for the smart contract wallet from the EntryPoint contract
+        // Nonces prevent replay attacks
+        // They ensure each user operation can only be executed once and in the correct order
+        // First operation nonce = 0, second operation nonce = 1... and so forth
         uint256 nonce = IEntryPoint(config.entryPoint).getNonce(minimalAccount, 0);
+
+        // This line calls the internal helper function _generateUnsignedUserOperation
+        // to create a PackedUserOperationStruct with all the neccessary fields
         PackedUserOperation memory userOp = _generateUnsignedUserOperation(callData, minimalAccount, nonce);
 
         // 2. Get the userOp hash
+        // creates the standardized hash of the user operation by calling the EntryPoint 
+        // contracts getUserOpHash() function
         bytes32 userOpHash = IEntryPoint(config.entryPoint).getUserOpHash(userOp);
+
+        // userOpHash then get convereted to an 
+        // Ethereum signed message hash 
+        // (adds the "\x19Ethereum Signed Message:\n32 prefix")
+        // which is what actually gets signed
         bytes32 digest = userOpHash.toEthSignedMessageHash();
 
         // 3. Sign it
