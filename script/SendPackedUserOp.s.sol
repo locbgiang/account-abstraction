@@ -126,6 +126,15 @@ contract SendPackedUserOp is Script {
         return userOp;
     }
 
+    /**
+     * This function _generateUnsignedUserOperation creates a PackedUserOperation struct
+     * with all the necessary fields for EIP-4337 Account Abstraction, but without a signature
+     * @param callData The actual function call to execute (USDC approve in this case)
+     * @param sender The smart contract wallet address that will execute the operation
+     * @param nonce For replay protection (ensures operations execute in order)
+     * 
+     * This function gets called by the public generateSignedUserOperation
+     */
     function _generateUnsignedUserOperation(
         bytes memory callData, 
         address sender, 
