@@ -108,13 +108,18 @@ contract SendPackedUserOp is Script {
         bytes32 digest = userOpHash.toEthSignedMessageHash();
 
         // 3. Sign it
+        // The function sign the digest (user operation hash) to produce the signature components
         uint8 v;
         bytes32 r;
         bytes32 s;
         uint256 ANVIL_DEFAULT_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+        
+        // If chain ID is 31337 (indicating a local Anvil testnet)
         if (block.chainid == 31337) {
+            // it uses a hardcoded private key (ANVIL_DEFAULT_KEY) to sign the hash
             (v, r, s) = vm.sign(ANVIL_DEFAULT_KEY, digest);
         } else {
+            // for other networks, it uses the private key associated with config.account
             (v, r, s) = vm.sign(config.account, digest);
         }
         userOp.signature = abi.encodePacked(r, s, v) // note the order
