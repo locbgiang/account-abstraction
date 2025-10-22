@@ -130,11 +130,13 @@ contract SendPackedUserOp is Script {
     }
 
     /**
+     * This function _generateUnsignedUserOperation creates a PackedUserOperation struct
+     * with all the necessary fields for EIP-4337 Account Abstraction, but without a signature
+     * @param callData The actual function call to execute (USDC approve in this case)
+     * @param sender The smart contract wallet address that will execute the operation
+     * @param nonce For replay protection (ensures operations execute in order)
      * 
-     * @param callData The data for the function call that the user operation will execute
-     * @param sender The address of the smart contract wallet (sender) initiating the operation
-     * @param nonce A unique number (retrieved from the IEntryPoint contract) 
-     * to ensure the operation is unique and prevent replay attacks.
+     * This function gets called by the public generateSignedUserOperation
      */
     function _generateUnsignedUserOperation(
         bytes memory callData, 
