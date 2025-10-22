@@ -122,10 +122,20 @@ contract SendPackedUserOp is Script {
             // for other networks, it uses the private key associated with config.account
             (v, r, s) = vm.sign(config.account, digest);
         }
+
+        // The signature components (r,s,v) are concatenated into a single bytes
+        // value using abi.encodePacked. This is the format expected by the IEntryPoint contract
         userOp.signature = abi.encodePacked(r, s, v) // note the order
         return userOp;
     }
 
+    /**
+     * 
+     * @param callData The data for the function call that the user operation will execute
+     * @param sender The address of the smart contract wallet (sender) initiating the operation
+     * @param nonce A unique number (retrieved from the IEntryPoint contract) 
+     * to ensure the operation is unique and prevent replay attacks.
+     */
     function _generateUnsignedUserOperation(
         bytes memory callData, 
         address sender, 
