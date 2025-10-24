@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Script, console2} from "@forge-std/Script.sol";
+import {Script, console2} from "forge-std/Script.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {DevOpsTools} from "@foundry-devops/src/DevOpsTools.sol";
+import {PackedUserOperation} from "@account-abstraction/contracts/intefaces/PackedUserOperation.sol";
+import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 contract SendPackedUserOp is Script {
 
@@ -63,7 +65,7 @@ contract SendPackedUserOp is Script {
         PackedUserOperation[] memory ops = new PackedUserOperation[](1);
         ops[0] = userOp;
 
-\        // handleOps: the handleOps function of the IEntryPoint contract is called with:
+        // handleOps: the handleOps function of the IEntryPoint contract is called with:
         // ops: the array of packed user operations
         // payable(HelperConfig.getConfig().account): the account that will pay for the operation
         vm.startBroadcast();
@@ -125,7 +127,7 @@ contract SendPackedUserOp is Script {
 
         // The signature components (r,s,v) are concatenated into a single bytes
         // value using abi.encodePacked. This is the format expected by the IEntryPoint contract
-        userOp.signature = abi.encodePacked(r, s, v) // note the order
+        userOp.signature = abi.encodePacked(r, s, v); // note the order
         return userOp;
     }
 
