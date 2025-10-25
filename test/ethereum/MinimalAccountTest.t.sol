@@ -6,16 +6,22 @@ import {Test} from "forge-std/Test.sol";
 import {MinimalAccount} from "../../src/ethereum/MinimalAccount.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {SendPackedUserOp, IEntryPoint} from "../../script/SendPackedUserOp.s.sol";
+import {SendPackedUserOp, PackedUserOperation, IEntryPoint} from "../../script/SendPackedUserOp.s.sol";
 import {DeployMinimal} from "../../script/DeployMinimal.s.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract MinimalAccountTest is Test {
+    using MessageHashUtils for bytes32;
+
     MinimalAccount minimalAccount;
     HelperConfig helperConfig;
     ERC20Mock usdc;
     SendPackedUserOp sendPackedUserOp;
 
     address randomUser = makeAddr("randomUser");
+    
+    uint256 constant AMOUNT = 1e18;
 
     function setUp() public {
         DeployMinimal deployMinimal = new DeployMinimal();
@@ -78,7 +84,7 @@ contract MinimalAccountTest is Test {
             helperConfig.getConfig(),
             address(minimalAccount)
         );
-        bytes userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
+        bytes32 userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
 
         // act
         address actualSigner = ECDSA.recover(userOperationHash.toEthSignedMessageHash(), packedUserOp.signature);
@@ -108,7 +114,7 @@ contract MinimalAccountTest is Test {
             helperConfig.getConfig(),
             address(minimalAccount)
         );
-        bytes userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
+        bytes32 userOperationHash = IEntryPoint(helperConfig.getConfig().entryPoint).getUserOpHash(packedUserOp);
         uint256 missingAccountFunds = 1e18;
         vm.prank(helperConfig.getConfig().entryPoint);
         uint256 validationData = minimalAccount.validateUserOp(packedUserOp, userOperationHash, missingAccountFunds);

@@ -4,10 +4,17 @@ pragma solidity ^0.8.24;
 import {Script, console2} from "forge-std/Script.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {DevOpsTools} from "@foundry-devops/src/DevOpsTools.sol";
-import {PackedUserOperation} from "@account-abstraction/contracts/intefaces/PackedUserOperation.sol";
+import {PackedUserOperation} from "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
 import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {MinimalAccount} from "../src/ethereum/MinimalAccount.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract SendPackedUserOp is Script {
+    using MessageHashUtils for bytes32;
+
+    // make sure you trust this user - don't run this on Mainnet
+    address constant RANDOM_APPROVER = 0x9EA9b0cc1919def1A3CfAEF4F7A66eE3c36F86fC;
 
     /**
      * designed to create and send a 'packed user operation' on the Ethereum blockchain.
@@ -45,7 +52,7 @@ contract SendPackedUserOp is Script {
         // wraps your function call in the smart wallet's execute() function.
         // your smart wallet needs to know 
         //'execute this approve call on the USDC contract with 0 ETH value'
-        bytes memory executionCallData = abi.encodeWithSelector(
+        bytes memory executeCallData = abi.encodeWithSelector(
             MinimalAccount.execute.selector,
             dest,
             value,
