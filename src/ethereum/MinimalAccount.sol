@@ -35,14 +35,87 @@ import {IEntryPoint} from '@account-abstraction/contracts/interfaces/IEntryPoint
  */
 contract MinimalAccount is IAccount, Ownable {
 
+    ////////////////////////////////////////////////
+    // Errors //////////////////////////////////////
+    ////////////////////////////////////////////////
+    
+    error MinimalAccount__NotFromEntryPoint();
+    error MinimalAccount__NotFromEntryPointOrOwner();
+    error MinimalAccount__CallFailed(bytes);
+
     ///////////////////////////////////////////////////////////////
     // State Variables ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////
 
     IEntryPoint private immutable i_entryPoint;
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Modifiers //////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    modifier requireFromEntryPoint() {
+        if (msg.sender != address(i_entryPoint)) {
+            revert MinimalAccount__NotFromEntryPoint();
+        }
+        _;
+    }
+
+    modifier requireFromEntryPointOrOwner() {
+        if (msg.sender != address(i_entryPoint) && msg.sender != owner()) {
+            revert MinimalAccount__NotFromEntryPointOrOwner();
+        }
+        _;
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Functions ///////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+
     constructor(address entryPoint) Ownable(msg.sender) {
         i_entryPoint = IEntryPoint(entryPoint);
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // External Function ////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
+
+    function execute(
+        address dest, 
+        uint256 value, 
+        bytes calldata functionData
+    ) external requireFromEntryPointOrOwner {
+        (bool success, bytes memory result) = dest.call{value: value}(functionData);
+        if (!success) {
+            revert MinimalAccount__CallFailed(result);
+        }
+    }
+
+     /**
+     * This is a core part of the ERC-4337 account abstraction standard.
+     * Called by EntryPoint contract to validate a user operation before executing it.
+     * It acts as a security checkpoint to ensure the operation is legitimate and properly funded.
+     * @param userOp the packed user operation containing all the transaction details
+     * @param userOpHash a hash of the user operation used for signature verification
+     * @param missingAccountFunds the amount of ETH needed to cover gas fees that the account doesnt currently have
+     */
+    function validateUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) 
+        external
+        requireFromEntryPoint
+        returns (uint256 validationData)
+    {
+        // signature validation:
+        // Calls the internal _validateSignature function to verify that the operation was signed
+        // Returns the validation data that indicates whether the signature is valid
+        validationData = _validateSignature(userOp, userOpHash);
+        // _validateNonce()
+
+        // pay any missing funds to the EntryPoint to cover gas costs
+        // if the account doesn't have enough ETH for gas, this transfer the required amount
+        _payPrefund(missingAccountFunds);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -65,30 +138,11 @@ contract MinimalAccount is IAccount, Ownable {
         }
     }
 
-    /**
-     * This is a core part of the ERC-4337 account abstraction standard.
-     * Called by EntryPoint contract to validate a user operation before executing it.
-     * It acts as a security checkpoint to ensure the operation is legitimate and properly funded.
-     * @param userOp the packed user operation containing all the transaction details
-     * @param userOpHash a hash of the user operation used for signature verification
-     * @param missingAccountFunds the amount of ETH needed to cover gas fees that the account doesnt currently have
-     */
-    function validateUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 missingAccountFunds
-    ) 
-        external
-        returns (uint256 validationData)
-    {
-        // signature validation:
-        // Calls the internal _validateSignature function to verify that the operation was signed
-        // Returns the validation data that indicates whether the signature is valid
-        validationData = _validateSignature(userOp, userOpHash);
-        // _validateNonce()
+    /////////////////////////////////////////////////////////////////
+    // Getters //////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
 
-        // pay any missing funds to the EntryPoint to cover gas costs
-        // if the account doesn't have enough ETH for gas, this transfer the required amount
-        _payPrefund(missingAccountFunds);
+    function getEntryPoint() external view returns (address) {
+        return address(i_entryPoint);
     }
 }

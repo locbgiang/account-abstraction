@@ -65,7 +65,7 @@ contract SendPackedUserOp is Script {
         PackedUserOperation memory userOp = generateSignedUserOperation(
             executeCallData,
             helperConfig.getConfig(),
-            minimalAccountAddress()
+            minimalAccountAddress
         );
 
         // The PackeduserOperation is added to an array (ops) with a single element
