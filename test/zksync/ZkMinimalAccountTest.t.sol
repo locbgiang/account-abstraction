@@ -19,4 +19,32 @@ contract ZkMinimalAccountTest is Test {
         usdc = new ERC20Mock();
         vm.deal(address(minimalAccount), AMOUNT);
     }
+
+    function testOwnerCanExecuteCommands() public {
+        // ARRANGE
+
+        // set the destination address to the USDC mock contract
+        // this is where the transaction will be sent to
+        address dest = address(usdc);
+
+        // set the ETH value to send with the transaction to 0
+        // since this is jus calling the function (not transfering) no value is needed
+        uint256 value = 0;
+
+        // encodes the funciton call datat for mint(address, uint256)
+        // will mint AMOUNT (1e18) toknes to the minimalAccount address
+        // this is the actual operation the transaction will execute
+        bytes memory functionData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(minimalAccount), AMOUNT);
+        
+        // creates an unsigned zkSync transaction structure with 
+        // 1. minimalAccount.Owner() - the transaction sender (ANVIL_DEFAULT_ACCOUNT)
+        // 2. 113 - transaction type indentifier for zkSync
+        // 3. dest - the USDC contract address (target)
+        // 4. value - 0 eth
+        // 5 functionData - the encoded mint function call
+        Transaction memory transaction = 
+            _createUnsignedTransaction(minimalAccount.owner(), 113, dest, value, functionData);
+
+        
+    }
 }
