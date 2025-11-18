@@ -9,6 +9,19 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {SIG_VALIDATION_FAILED, SIG_VALIDATION_SUCCESS} from "lib/account-abstraction/contracts/core/Helpers.sol";
 import {IEntryPoint} from "lib/account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
+
+/**
+ * @title MinimalAccount
+ * @author Loc Giang
+ * 1. User creates a PackedUserOperation (sender, nonce, callData, signature, gas limit and fee)
+ * 2. IEntryPoint validate the data, by MinimalAccount (this contract)
+ *      - validateUserOp()
+ *      - _validatesSignature()
+ *      - _payPrefund() 
+ * 3. If passes IEntryPoint calls execute from this contract
+ *      - execute()
+ *      - dest.call()
+ */     
 contract MinimalAccount is IAccount, Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
