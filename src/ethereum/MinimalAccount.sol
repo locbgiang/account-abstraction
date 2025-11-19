@@ -77,15 +77,29 @@ contract MinimalAccount is IAccount, Ownable {
         }
     }
 
-    // IEntryPoint will call this function to validate the PackedUserOperation userOp
+    /**
+     * IEntryPoint will call this function to validate the PackedUserOperation userOp
+     * It's the gatekeeper that determines if a suer operation should be executed
+     * @param userOp contains all the operation details
+     * @param userOpHash hash of the user operation, used for signature verification
+     * @param missingAccountFunds amount of ETH this account needs to pay the EntryPoint
+     */
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
         external
         requireFromEntryPoint
-        returns (uint256 validationData)
+        returns (uint256)
     {
+        // calls _validateSignature
+        // check if the owner actually signed this operation
+        // returns 0 (success) for (1) failed
         validationData = _validateSignature(userOp, userOpHash);
         // _validateNonce()
+
+        // Transfer ETH to the EntryPoint to cover gas costs
+        // This is the economic check - "Can this account pay for the transaction?"
         _payPrefund(missingAccountFunds);
+
+        return validationData;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -121,8 +135,16 @@ contract MinimalAccount is IAccount, Ownable {
         return SIG_VALIDATION_SUCCESS;
     }
 
+    /**
+     * This function pays the EntryPoint upfront for the gas costs of executing the user operation.
+     * It's the economic security mechanism of ERC-4337
+     * @param missingAccountFunds calculated by EntryPoint based on gas prices
+     */
     function _payPrefund(uint256 missingAccountFunds) internal {
+        // only pays if there's actually funds missing
+        // if 0, the account already has enough deposited with EntryPoint
         if (missingAccountFunds != 0) {
+            // send ETH to EntryPoint:
             (bool success,) = payable(msg.sender).call{value: missingAccountFunds, gas: type(uint256).max}("");
             (success);
         }
