@@ -77,7 +77,7 @@ contract MinimalAccount is IAccount, Ownable {
         }
     }
 
-    // A signature is valid, if it's the MinimalAccount owner
+    // IEntryPoint will call this function to validate the PackedUserOperation userOp
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
         external
         requireFromEntryPoint
@@ -91,14 +91,30 @@ contract MinimalAccount is IAccount, Ownable {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    // EIP-191 version of the signed hash
+    
+    // calls by validateUserOp
+    // validates the PackedUserOperation userOp
     function _validateSignature(PackedUserOperation calldata userOp, bytes32 userOpHash)
         internal
         view
         returns (uint256 validationData)
     {
+        // convert to Ethereum Signed message
+        // takes the userOpHash (hash of the user operation)
+        // converts it to EIP-191 format
+        // this prevents signature replay attacks across different context   
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(userOpHash);
+
+        // Recover Signer's address
+        // Uses elliptic curve cryptography to extract the Ethereum address from the signature
+        // Given: signature (65 bytes: r, s, v components) + message hash
+        // Returns: the address that created this signature
         address signer = ECDSA.recover(ethSignedMessageHash, userOp.signature);
+
+        // compare with the owner
+        // compares the recovered address with owner() (set in constructor)
+        // if they don't match -> operation is unauthorized -> return 1 (failed)
+        // if they match -> operation is valid -> return 0 (success)
         if (signer != owner()) {
             return SIG_VALIDATION_FAILED;
         }
