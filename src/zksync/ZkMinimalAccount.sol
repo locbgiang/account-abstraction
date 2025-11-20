@@ -26,8 +26,9 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * This contract implements a minimal account abstraction for zkSync Era, allowing smart contracts
- * to act as accounts that can validate and execute transactions.
+ * @title ZkMinimalAccount
+ * @author Loc Giang
+ * validate, pay fees, execute. All called by bootloader
  */
 contract ZkMinimalAccount is IAccount, Ownable {
     using MemoryTransactionHelper for Transaction;
@@ -64,9 +65,11 @@ contract ZkMinimalAccount is IAccount, Ownable {
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     /**
-     * @notice must increase the nonce
-     * @notice must validate the transaction (check the owner signed the transaction)
-     * @notice also check to see if we have enough money in our account
+     * @notice bootloader calls this function first
+     * increments nonce via NONCE_HOLDER_SYSTEM_CONTRACT
+     * checks if account has sufficient balance
+     * verifies signature using ECDSA recover against owner
+     * returns ACCOUNT_VALIDATION_SUCCESS_MAGIC if valid
      */
     function validateTransaction(bytes32, /*_txHash*/ bytes32, /*_suggestedSignedHash*/ Transaction memory _transaction)
         external
@@ -77,22 +80,10 @@ contract ZkMinimalAccount is IAccount, Ownable {
         return _validateTransaction(_transaction);
     }
 
-    function executeTransaction(bytes32, /*_txHash*/ bytes32, /*_suggestedSignedHash*/ Transaction memory _transaction)
-        external
-        payable
-        requireFromBootLoaderOrOwner
-    {
-        _executeTransaction(_transaction);
-    }
-
-    function executeTransactionFromOutside(Transaction memory _transaction) external payable {
-        bytes4 magic = _validateTransaction(_transaction);
-        if (magic != ACCOUNT_VALIDATION_SUCCESS_MAGIC) {
-            revert ZkMinimalAccount__InvalidSignature();
-        }
-        _executeTransaction(_transaction);
-    }
-
+    /**
+     * @notice bootloader calls this function second
+     * transfer fee to bootloader using _transaction.payToTheBootloader()
+     */
     function payForTransaction(bytes32, /*_txHash*/ bytes32, /*_suggestedSignedHash*/ Transaction memory _transaction)
         external
         payable
@@ -103,6 +94,35 @@ contract ZkMinimalAccount is IAccount, Ownable {
         }
     }
 
+    /**
+     * @notice bootloader will call this last, after validation and gas payment
+     * executes the actual transaction via _executeTransaction() internal function
+     * handles regular calls or system contract deployments
+     */
+    function executeTransaction(bytes32, /*_txHash*/ bytes32, /*_suggestedSignedHash*/ Transaction memory _transaction)
+        external
+        payable
+        requireFromBootLoaderOrOwner
+    {
+        _executeTransaction(_transaction);
+    }
+
+    /**
+     * @notice this function combines validation and execution in one call
+     * called externally
+     * requires valid signature (reverts with ZkMinimalAccount__InvalidSignature if invalid) 
+     */
+    function executeTransactionFromOutside(Transaction memory _transaction) external payable {
+        bytes4 magic = _validateTransaction(_transaction);
+        if (magic != ACCOUNT_VALIDATION_SUCCESS_MAGIC) {
+            revert ZkMinimalAccount__InvalidSignature();
+        }
+        _executeTransaction(_transaction);
+    }
+
+    /**
+     * would handle paymaster-sponsored transaction
+     */
     function prepareForPaymaster(bytes32 _txHash, bytes32 _possibleSignedHash, Transaction memory _transaction)
         external
         payable
@@ -111,6 +131,10 @@ contract ZkMinimalAccount is IAccount, Ownable {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /**
+     * the internal function for validating transactions
+     */
     function _validateTransaction(Transaction memory _transaction) internal returns (bytes4 magic) {
         // Call nonceholder
         // increment nonce
@@ -141,6 +165,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
         return magic;
     }
 
+    // the internal function for executing transaction
     function _executeTransaction(Transaction memory _transaction) internal {
         address to = address(uint160(_transaction.to));
         uint128 value = Utils.safeCastToU128(_transaction.value);
