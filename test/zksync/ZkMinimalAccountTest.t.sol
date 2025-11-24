@@ -45,6 +45,69 @@ contract ZkMinimalAccountTest is Test {
         Transaction memory transaction = 
             _createUnsignedTransaction(minimalAccount.owner(), 113, dest, value, functionData);
 
-        
+        // act
+
+        // set the next call to minimalAccount.owner()
+        vm.prank(minimalAccount.owner());
+        // executeTransaction
+        minimalAccount.executeTransaction(EMPTY_BYTES32, EMPTY_BYTES32, transaction);
+
+        // assert
+        assertEq(usdc.balanceOf(address(minimalAccount)), AMOUNT);
+    }
+
+    function testZkValidateTransaction() public {
+        // arrange
+
+        // the same transaction parameters as the previous test
+        // (mint USDC to minimalAccount)
+        address dest = address(usdc);
+        uint256 value = 0;
+        bytes memory functionData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(minimalAccount), AMOUNT);
+
+        // creates an unsigned transaction structure
+        Transaction memory transaction =
+            _createUnsignedTransaction(minimalAccount.owner(), 113, dest, value, functionData);
+
+        // signs the transaction with the owner's private key
+        // this is the key difference from the first test -this transaction now has a valid signature 
+        transaction = _signTransaction(transaction);
+
+        // act
+
+        // sets msg.sender to BOOTLOADER_FORMAL_ADDRESS for the next call
+        // this passes the requireFromBootLoader modifier check
+        vm.prank(BOOTLOADER_FORMAL_ADDRESS);
+
+        // calls validateTransaction() which internally calls _validateTransaction()
+        // inside _validateTransaction():
+        //      1. incement nonces
+        //      2. check balance
+        //      3. verifies signature
+        //      4. returns magic value
+        bytes4 magic = minimalAccount.validateTransaction(EMPTY_BYTES32, EMPTY_BYTES32, transaction);
+
+        // assert
+
+        // verifies that validation succeeded by checking the returned magic value
+        assertEq(magic, ACCOUNT_VALIDATION_SUCCESS_MAGIC);
+    }
+
+    ////////////////////////////////////////////////////
+    // Helpers /////////////////////////////////////////
+    ////////////////////////////////////////////////////
+
+    function _signTransaction(Transaction memory transaction) internal view returns (Transaction memory) {
+        bytes32 unsignedTransactionHash = MemoryTransactionHelper.encodeHash(transaction);
+        // bytes32 digest = unsignedTransactionHash.toEthSignedMessageHash();
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        uint256 ANVIL_DEFAULT_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+        (v, r, s) = vm.sign(ANVIL_DEFAULT_KEY, unsignedTransactionHash);
+        Transaction memory signedTransaction = transaction;
+        signedTransaction.signature = abi.encodePacked(r, s, v);
+        return signedTransaction;
     }
 }
