@@ -4,6 +4,18 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {ZkMinimalAccount} from "../../src/zksync/ZkMinimalAccount.sol";
+import {
+    Transaction, 
+    MemoryTransactionHelper
+} from "lib/foundry-era-contracts/src/system-contracts/contracts/libraries/MemoryTransactionHelper.sol";
+import {BOOTLOADER_FORMAL_ADDRESS} from "lib/foundry-era-contracts/src/system-contracts/contracts/Constants.sol";
+import {ACCOUNT_VALIDATION_SUCCESS_MAGIC} from "lib/foundry-era-contracts/src/system-contracts/contracts/interfaces/IAccount.sol";
+
+// OZ imports
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+
+// Foundry Devops
+import {ZkSyncChainChecker} from "lib/foundry-devops/src/ZkSyncChainChecker.sol";
 
 contract ZkMinimalAccountTest is Test {
 
@@ -12,6 +24,7 @@ contract ZkMinimalAccountTest is Test {
 
     address constant ANVIL_DEFAULT_ACCOUNT = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256 constant AMOUNT = 1e18;
+    bytes32 constant EMPTY_BYTES32 = bytes32(0);
 
     function setUp() public {
         minimalAccount = new ZkMinimalAccount();
@@ -121,9 +134,9 @@ contract ZkMinimalAccountTest is Test {
         uint256 nonce = vm.getNonce(address(minimalAccount));
         bytes32[] memory factoryDeps = new bytes32[](0);
         return Transaction({
-            txTye: transactionType, // type 113 (0x71)
-            from: uint256(uint256(from)),
-            to: uint256(uint256(to)),
+            txType: transactionType, // type 113 (0x71)
+            from: uint256(uint160(from)),
+            to: uint256(uint160(to)),
             gasLimit: 16777216,
             gasPerPubdataByteLimit: 16777216,
             maxFeePerGas: 16777216,

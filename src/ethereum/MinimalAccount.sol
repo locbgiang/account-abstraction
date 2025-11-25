@@ -57,7 +57,7 @@ contract MinimalAccount is IAccount, Ownable {
     //////////////////////////////////////////////////////////////*/
     /**
      * 
-     * @param entryPoint 
+     * @param entryPoint the address of the entry point
      * Calls the parent Ownable constructor
      * Sets msg.sender 
      */
@@ -92,7 +92,7 @@ contract MinimalAccount is IAccount, Ownable {
         // calls _validateSignature
         // check if the owner actually signed this operation
         // returns 0 (success) for (1) failed
-        validationData = _validateSignature(userOp, userOpHash);
+        uint256 validationData = _validateSignature(userOp, userOpHash);
         // _validateNonce()
 
         // Transfer ETH to the EntryPoint to cover gas costs
