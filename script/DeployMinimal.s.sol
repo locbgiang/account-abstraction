@@ -7,10 +7,6 @@ import {HelperConfig} from "script/HelperConfig.s.sol";
 
 contract DeployMinimal is Script {
     function run() public {
-        deployMinimalAccount();
-    }
-
-    function deployMinimalAccount() public returns (HelperConfig, MinimalAccount) {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
@@ -18,6 +14,15 @@ contract DeployMinimal is Script {
         MinimalAccount minimalAccount = new MinimalAccount(config.entryPoint);
         minimalAccount.transferOwnership(config.account);
         vm.stopBroadcast();
+    }
+
+    function deployMinimalAccount() public returns (HelperConfig, MinimalAccount) {
+        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+
+        // No broadcasting in tests; simply construct the contract and set ownership.
+        MinimalAccount minimalAccount = new MinimalAccount(config.entryPoint);
+        minimalAccount.transferOwnership(config.account);
         return (helperConfig, minimalAccount);
     }
 }

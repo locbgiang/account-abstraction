@@ -5,6 +5,8 @@ libs = ["lib"]
 remappings = ['@openzeppelin/contracts=lib/openzeppelin-contracts/contracts']
 is-system = true
 via-ir = true
+# Pin compiler version to avoid 0.8.30 stack swapping bug hitting zkSync build.
+solc_version = "0.8.24"
 optimizer = true
 fs_permissions = [
     { access = "read", path = "./broadcast" },

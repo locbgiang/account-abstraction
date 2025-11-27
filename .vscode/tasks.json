@@ -1,0 +1,30 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run zkSync tests",
+			"type": "shell",
+			"command": "forge test --zksync --match-path test/zksync/**",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run zkSync tests",
+			"type": "shell",
+			"command": "forge test --zksync --match-path test/zksync/**",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Run zkSync tests",
+			"type": "shell",
+			"command": "forge test --zksync --match-path test/ethereum/**",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

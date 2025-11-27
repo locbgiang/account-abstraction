@@ -123,12 +123,10 @@ contract HelperConfig is Script {
             return localNetworkConfig;
         }
 
-        // deploy mocks
+        // deploy mocks without broadcasting in tests
         console2.log("Deploying mocks...");
-        vm.startBroadcast(ANVIL_DEFAULT_ACCOUNT);
         EntryPoint entryPoint = new EntryPoint();
         ERC20Mock erc20Mock = new ERC20Mock();
-        vm.stopBroadcast();
         console2.log("Mocks deployed!");
 
         localNetworkConfig = NetworkConfig({
