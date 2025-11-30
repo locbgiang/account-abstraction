@@ -11,6 +11,11 @@ import {DeployMinimal} from "../../script/DeployMinimal.s.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
+/**
+ * @title MinimalAccountTest
+ * @author Loc Giang
+ * forge test --match-path test/ethereum/**
+ */
 contract MinimalAccountTest is Test {
     using MessageHashUtils for bytes32;
 

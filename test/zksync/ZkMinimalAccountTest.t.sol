@@ -15,6 +15,12 @@ import {ACCOUNT_VALIDATION_SUCCESS_MAGIC} from "lib/foundry-era-contracts/src/sy
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+/**
+ * @title ZkMinimalAccountTest
+ * @author Loc Giang
+ * forge test --zksync --match-path test/zksync/**
+ */
+
 contract ZkMinimalAccountTest is Test {
     using MessageHashUtils for bytes32;
     
