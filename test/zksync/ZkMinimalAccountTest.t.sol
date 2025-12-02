@@ -20,7 +20,6 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @author Loc Giang
  * forge test --zksync --match-path test/zksync/**
  */
-
 contract ZkMinimalAccountTest is Test {
     using MessageHashUtils for bytes32;
     
@@ -100,6 +99,10 @@ contract ZkMinimalAccountTest is Test {
     // Helper Functions //
     //////////////////////
 
+    /**
+     * 
+     * @param transaction transaction data
+     */
     function _signTransaction(
         Transaction memory transaction    
     ) internal view returns(Transaction memory) {
